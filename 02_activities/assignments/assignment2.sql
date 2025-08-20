@@ -197,18 +197,19 @@ This table will contain only products where the `product_qty_type = 'unit'`.
 It should use all of the columns from the product table, as well as a new column for the `CURRENT_TIMESTAMP`.  
 Name the timestamp column `snapshot_timestamp`. */
 DROP TABLE IF EXISTS product_units;
+
 CREATE TABLE product_units AS
 SELECT 
-    p.*,
+    *,
     CURRENT_TIMESTAMP AS snapshot_timestamp
-FROM product AS p
-WHERE p.product_qty_type = 'unit';
+FROM product
+WHERE product_qty_type = 'unit';
 
 
 
 /*2. Using `INSERT`, add a new row to the product_units table (with an updated timestamp). 
 This can be any product you desire (e.g. add another record for Apple Pie). */
---adding slim jims to the product_units TABLE
+
 INSERT INTO product_units (
     product_id,
     product_name,
@@ -230,7 +231,7 @@ DELETE FROM product_units
 WHERE snapshot_timestamp < (
     SELECT MAX(snapshot_timestamp)
     FROM product_units AS pu
-    WHERE pu.product_name = product_units.product_name
+    WHERE pu.product_name = product_units.product_name -- avoiding the south park reference..
 );
 
 
@@ -251,26 +252,25 @@ Finally, make sure you have a WHERE statement to update the right row,
 	you'll need to use product_units.product_id to refer to the correct row within the product_units table. 
 When you have all of these components, you can run the update statement. */
 
-ALTER TABLE product_units
-ADD current_quantity INT;
+ALTER TABLE product_units 
+ADD COLUMN current_quantity INT;
 
---get the last quantity...
-SELECT vendor_id,
-       product_id,
-       market_date,
-       quantity
+UPDATE product_units AS pu
+SET current_quantity = COALESCE(uPu.quantity, 0)
 FROM (
-    SELECT vi.*,
-           ROW_NUMBER() OVER (PARTITION BY vi.vendor_id, vi.product_id ORDER BY vi.market_date DESC
-           ) AS last_quantity
-    FROM vendor_inventory AS vi
-) x
-WHERE last_quantity = 1;
+    SELECT *
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY market_date DESC) AS rowRank
+        FROM vendor_inventory
+    ) AS ranked
+    WHERE rowRank = 1
+) AS uPu
+WHERE pu.product_id = uPu.product_id;
 
---coalesce to get rid of the nulls
-
---SET and WHERE
-
---get the rows in product_units.product_id and UPDATE
+--I couldnt get all the nulls above so I am just doing it here..
+UPDATE product_units
+SET current_quantity = 0
+WHERE current_quantity IS NULL;
 
 
