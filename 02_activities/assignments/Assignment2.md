@@ -56,8 +56,21 @@ The store wants to keep customer addresses. Propose two architectures for the CU
 ```
 Your answer...
 ```
-
-***
+#### CUSTOMER_ADDRESS - retain changes - type 2
+*Columns = 
+	*customer_address_key
+	*customer_id
+	*customer_firstName
+	*customer_lastName
+	*address
+	*address_startDate
+	*addressEndDate
+#### CUSTOMER_ADDRESS - overwrite changes - type 1 
+*Columns =  
+        *customer_id
+        *customer_firstName
+        *customer_lastName
+        *address
 
 ## Section 2:
 You can start this section following *session 4*.
